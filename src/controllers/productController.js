@@ -5,7 +5,8 @@ const {
   deleteMultipleImages,
   cloudinary,
 } = require("../config/cloudinary");
-const Product = require("../models/productModel");  
+const Product = require("../models/productModel");
+const apiFeatures = require("../utils/apiFeature");
 
 // Route: localhost:8000/api/product/create
 const createproduct = async (req, res) => {
@@ -38,11 +39,22 @@ const createproduct = async (req, res) => {
 // Route: localhost:8000/api/product/getall
 const getAllproduct = async (req, res) => {
   try {
-    const allProduct = await Product.find();
+    const productCount = await Product.countDocuments();
+    const features = new apiFeatures(Product.find(), req.query)
+      .search()
+      .filter()
+      .sort()
+      .paginate();
+    const allProduct = await features.query;
     if (!allProduct) {
       return res.json("Product not found");
     }
-    return res.json({ message: "Get All Product", allProduct });
+    return res.json({
+      message: "Get All Product",
+      productCount,
+      total: allProduct.length,
+      allProduct,
+    });
   } catch (error) {
     console.log(error);
     return res.json(error.message);
@@ -62,7 +74,7 @@ const getOneproduct = async (req, res) => {
     console.log(error);
     return res.json(error.message);
   }
-};  
+};
 
 // Route: localhost:8000/api/product/update
 const updateproduct = async (req, res) => {
@@ -91,7 +103,7 @@ const updateproduct = async (req, res) => {
     }
 
     const newImg = await uploadMultipleImages(file);
-    product.images = newImg; 
+    product.images = newImg;
 
     {
       /* 
@@ -155,13 +167,10 @@ const deleteproduct = async (req, res) => {
   }
 };
 
-
-
 module.exports = {
   createproduct,
   getAllproduct,
   getOneproduct,
   updateproduct,
   deleteproduct,
-  
 };
